@@ -1,0 +1,8 @@
+ablated_group,ablated_features,number_of_clusters,overall_mean,overall_std
+size,"['width_painting_cm', 'height_painting_cm', 'width_frame_cm', 'height_frame_cm']",8,3651.111438222493,1625.266320532502
+condition,['condition'],8,3792.7960571236595,2073.9364347521832
+technique,['technique'],8,3663.320291147268,1618.9098566559908
+signed,['signed'],8,3656.626332375587,1629.5355870760352
+style_description,['style'],8,3685.23238719475,2058.0561042752197
+style_patterns,"['encoded_0', 'encoded_1', 'encoded_2', 'encoded_3', 'encoded_4', 'encoded_5', 'encoded_6', 'encoded_7', 'encoded_8', 'encoded_9', 'encoded_10', 'encoded_11', 'encoded_12', 'encoded_13', 'encoded_14', 'encoded_15', 'encoded_16', 'encoded_17', 'encoded_18', 'encoded_19', 'encoded_20', 'encoded_21', 'encoded_22', 'encoded_23', 'encoded_24', 'encoded_25', 'encoded_26', 'encoded_27', 'encoded_28', 'encoded_29', 'encoded_30', 'encoded_31', 'encoded_32', 'encoded_33', 'encoded_34', 'encoded_35', 'encoded_36', 'encoded_37', 'encoded_38', 'encoded_39', 'encoded_40', 'encoded_41', 'encoded_42', 'encoded_43', 'encoded_44', 'encoded_45', 'encoded_46', 'encoded_47', 'encoded_48', 'encoded_49']",8,2632.0907135781863,3013.6017286287465
+subject,['subject'],8,3660.52069690213,1659.1099417014848

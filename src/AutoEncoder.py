@@ -12,6 +12,7 @@ from torchsummary import summary
 from torchvision import transforms
 
 from Blocks import BasicConvBlock, UpConvBlock
+from ConvAutoEncoder import SegNet
 from utils import init_weights
 
 
@@ -130,28 +131,45 @@ class ConvAutoEncoderTwo(nn.Module):
         return self.encoder(x)
 
 
+class NormalizeInverse(transforms.Normalize):
+    """
+    Undoes the normalization and returns the reconstructed images in the input domain.
+    """
+
+    def __init__(self, mean, std):
+        mean = torch.as_tensor(mean)
+        std = torch.as_tensor(std)
+        std_inv = 1 / (std + 1e-7)
+        mean_inv = -mean * std_inv
+        super().__init__(mean=mean_inv, std=std_inv)
+
+    def __call__(self, tensor):
+        return super().__call__(tensor.clone())
+
+
 if __name__ == "__main__":
     # model = ConvAutoEncoderTwo()
     # summary(model.cuda(), input_size=(3, 224, 224))
-    cp = Checkpoint(dirname='auto_encoder_mse_no_sigmoid_200ep_b4_lrsch_0.001_100enc/checkpoints')
-    train_end_cp = TrainEndCheckpoint(dirname='auto_encoder_mse_no_sigmoid_200ep_b4_lrsch_0.001_100enc/checkpoints')
+    cp = Checkpoint(dirname='segnet_mse_no_sigmoid_sgd_150ep_b8_lr_0.01_30enc/checkpoints')
+    train_end_cp = TrainEndCheckpoint(dirname='segnet_mse_no_sigmoid_sgd_150ep_b8_lr_0.01_30enc/checkpoints')
     net = NeuralNetRegressor(
-        AutoEncoder,
-        module__coding_size=100,
-        device="cuda",
-        max_epochs=200,
-        batch_size=4,
+        SegNet,
+        module__encoding_size=30,
+        device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+        max_epochs=150,
+        batch_size=8,
         criterion=MSELoss,
+        lr=0.01,
         iterator_train__shuffle=True,
-        optimizer=torch.optim.Adam,
+        optimizer=torch.optim.SGD,
+        optimizer__momentum=.9,
         callbacks=[cp, train_end_cp]
     )
-
     net.initialize()
     net.load_params(checkpoint=cp)
     mean = np.array([0.5020, 0.4690, 0.4199])
     std = np.array([0.2052, 0.2005, 0.1966])
-    inv_normalize = transforms.Normalize(
+    inverse_transform = transforms.Normalize(
         mean=(-mean) / std,
         std=1 / std
     )
@@ -161,13 +179,18 @@ if __name__ == "__main__":
                                     transforms.Normalize(mean, std),
                                     ])
     for i in range(10):
-        img = transform(Image.open(f"../data/000{i}.png").convert('RGB'))
-        plt.imshow(inv_normalize(img).numpy().transpose(1, 2, 0))
-        plt.show()
+        img = transform(Image.open(f"../cropped_data/000{i}.png").convert('RGB'))
+        input_image = (img * torch.tensor(std).view(3, 1, 1) + torch.tensor(mean).view(3, 1, 1)).numpy().transpose(1, 2,
+                                                                                                                   0)
+        # plt.imshow(inv_normalize(img).numpy().transpose(1, 2, 0))
+        # plt.show()
         img = img.unsqueeze(0).cuda()
-        encoded = net.module_.encoder(img)
-        print(encoded)
-        decoded = net.module_.decoder(encoded)
-        output_image = decoded.detach().cpu().numpy().squeeze(0).transpose(1, 2, 0)
-        plt.imshow(output_image)
+        decoded = net.module_(img)
+        output_image = (decoded.detach().cpu() * torch.tensor(std).view(3, 1, 1) + torch.tensor(mean).view(3, 1,
+                                                                                                           1)).numpy().squeeze(
+            0).transpose(1, 2, 0)
+        fig, axs = plt.subplots(1, 2)
+        axs[0].imshow(input_image)
+        axs[1].imshow(output_image)
         plt.show()
+        # plt.savefig(f"../plots/segnet/50_enc/000{i}.png")

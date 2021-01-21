@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 .idea/
 data/
+cropped_data/
+cropped_data.rar

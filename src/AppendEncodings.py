@@ -23,12 +23,12 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
     ])
-
+    encodings = []
     for idx, row in data.iterrows():
         img = Image.open(row['file_path']).convert('RGB')
         tensor = torch_transformers(img).unsqueeze(0).cuda()
         encoder_output = net.module_.encoder(tensor)
         encoded = encoder_output.detach().cpu().squeeze(0).numpy()
         for i in range(len(encoded)):
-            data[f'encoded_{i}'] = encoded[i]
+            data.at[idx, f'encoded_{i}'] = encoded[i]
     data.to_csv("../data preprocessing/final_df_with_encodings.csv")

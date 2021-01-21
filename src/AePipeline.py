@@ -11,6 +11,7 @@ from torch.optim.lr_scheduler import CyclicLR
 from torchsummary import summary
 from torchvision import transforms
 from AutoEncoder import ConvAutoEncoder, AutoEncoder
+from ConvAutoEncoder import SegNet
 from Datasets import AutoEncoderImageDataset
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,22 +20,23 @@ import numpy as np
 from utils import UnNormalize
 
 SIZE = (224, 224)  # Resize the image to this shape
-TRAIN_DIR = os.path.join(os.path.abspath("."), "..", "data")
+TRAIN_DIR = os.path.join(os.path.abspath("."), "..", "cropped_data")
 #
-cp = Checkpoint(dirname='auto_encoder_mse_no_sigmoid_200ep_b4_lrsch_0.001_100enc/checkpoints')
-train_end_cp = TrainEndCheckpoint(dirname='auto_encoder_mse_no_sigmoid_200ep_b4_lrsch_0.001_100enc/checkpoints')
+cp = Checkpoint(dirname='segnet_mse_no_sigmoid_sgd_150ep_b8_lr_0.01_30enc/checkpoints')
+train_end_cp = TrainEndCheckpoint(dirname='segnet_mse_no_sigmoid_sgd_150ep_b8_lr_0.01_30enc/checkpoints')
 load_state = LoadInitState(checkpoint=cp)
-lr_scheduler = LRScheduler(policy=CyclicLR, base_lr=0.001, max_lr=0.01, cycle_momentum=False)
 net = NeuralNetRegressor(
-    AutoEncoder,
-    module__coding_size=100,
-    device="cuda",
-    max_epochs=200,
-    batch_size=4,
+    SegNet,
+    module__encoding_size=30,
+    device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+    max_epochs=150,
+    batch_size=8,
     criterion=MSELoss,
+    lr=0.01,
     iterator_train__shuffle=True,
-    optimizer=torch.optim.Adam,
-    callbacks=[cp, train_end_cp, load_state, lr_scheduler]
+    optimizer=torch.optim.SGD,
+    optimizer__momentum=.9,
+    callbacks=[cp, train_end_cp, load_state]
 )
 
 if __name__ == '__main__':
@@ -46,8 +48,8 @@ if __name__ == '__main__':
     mean = np.array([0.5020, 0.4690, 0.4199])
     std = np.array([0.2052, 0.2005, 0.1966])
     aug_tran = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(15),
+        # transforms.RandomHorizontalFlip(),
+        # transforms.RandomRotation(15),
         transforms.Resize(SIZE, interpolation=3),
         transforms.ToTensor(),
         transforms.Normalize(mean=mean, std=std)
