@@ -129,5 +129,6 @@ dmypy.json
 .pyre/
 .idea/
 data/
+src/AutoEncoder.py
+src/Blocks.py
 cropped_data/
-cropped_data.rar

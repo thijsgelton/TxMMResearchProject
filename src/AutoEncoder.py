@@ -8,12 +8,15 @@ from skorch import NeuralNetRegressor
 from skorch.callbacks import Checkpoint, TrainEndCheckpoint
 from torch import nn
 from torch.nn import MSELoss
-from torchsummary import summary
 from torchvision import transforms
 
 from Blocks import BasicConvBlock, UpConvBlock
 from ConvAutoEncoder import SegNet
 from utils import init_weights
+
+"""
+This file contains Architectures that did not produce the correct results. 
+"""
 
 
 class ConvAutoEncoder(nn.Module):
@@ -127,29 +130,10 @@ class ConvAutoEncoderTwo(nn.Module):
         )
 
     def forward(self, x):
-        # x = self.encoder(x)
         return self.encoder(x)
 
 
-class NormalizeInverse(transforms.Normalize):
-    """
-    Undoes the normalization and returns the reconstructed images in the input domain.
-    """
-
-    def __init__(self, mean, std):
-        mean = torch.as_tensor(mean)
-        std = torch.as_tensor(std)
-        std_inv = 1 / (std + 1e-7)
-        mean_inv = -mean * std_inv
-        super().__init__(mean=mean_inv, std=std_inv)
-
-    def __call__(self, tensor):
-        return super().__call__(tensor.clone())
-
-
 if __name__ == "__main__":
-    # model = ConvAutoEncoderTwo()
-    # summary(model.cuda(), input_size=(3, 224, 224))
     cp = Checkpoint(dirname='segnet_mse_no_sigmoid_sgd_150ep_b8_lr_0.01_30enc/checkpoints')
     train_end_cp = TrainEndCheckpoint(dirname='segnet_mse_no_sigmoid_sgd_150ep_b8_lr_0.01_30enc/checkpoints')
     net = NeuralNetRegressor(
@@ -182,8 +166,6 @@ if __name__ == "__main__":
         img = transform(Image.open(f"../cropped_data/000{i}.png").convert('RGB'))
         input_image = (img * torch.tensor(std).view(3, 1, 1) + torch.tensor(mean).view(3, 1, 1)).numpy().transpose(1, 2,
                                                                                                                    0)
-        # plt.imshow(inv_normalize(img).numpy().transpose(1, 2, 0))
-        # plt.show()
         img = img.unsqueeze(0).cuda()
         decoded = net.module_(img)
         output_image = (decoded.detach().cpu() * torch.tensor(std).view(3, 1, 1) + torch.tensor(mean).view(3, 1,
@@ -193,4 +175,3 @@ if __name__ == "__main__":
         axs[0].imshow(input_image)
         axs[1].imshow(output_image)
         plt.show()
-        # plt.savefig(f"../plots/segnet/50_enc/000{i}.png")

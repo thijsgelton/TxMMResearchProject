@@ -3,7 +3,7 @@ import torch.nn as nn
 from torchsummaryX import summary
 
 
-class conv2DBatchNormRelu(nn.Module):
+class Conv2DBatchNormRelu(nn.Module):
     def __init__(
             self,
             in_channels,
@@ -15,7 +15,7 @@ class conv2DBatchNormRelu(nn.Module):
             dilation=1,
             with_bn=True,
     ):
-        super(conv2DBatchNormRelu, self).__init__()
+        super(Conv2DBatchNormRelu, self).__init__()
 
         conv_mod = nn.Conv2d(int(in_channels),
                              int(n_filters),
@@ -37,11 +37,11 @@ class conv2DBatchNormRelu(nn.Module):
         return outputs
 
 
-class segnetDown2(nn.Module):
+class SegnetDown2(nn.Module):
     def __init__(self, in_size, out_size):
-        super(segnetDown2, self).__init__()
-        self.conv1 = conv2DBatchNormRelu(in_size, out_size, 3, 1, 1)
-        self.conv2 = conv2DBatchNormRelu(out_size, out_size, 3, 1, 1)
+        super(SegnetDown2, self).__init__()
+        self.conv1 = Conv2DBatchNormRelu(in_size, out_size, 3, 1, 1)
+        self.conv2 = Conv2DBatchNormRelu(out_size, out_size, 3, 1, 1)
         self.maxpool_with_argmax = nn.MaxPool2d(2, 2, return_indices=True)
 
     def forward(self, inputs):
@@ -52,12 +52,12 @@ class segnetDown2(nn.Module):
         return outputs, indices, unpooled_shape
 
 
-class segnetDown3(nn.Module):
+class SegnetDown3(nn.Module):
     def __init__(self, in_size, out_size):
-        super(segnetDown3, self).__init__()
-        self.conv1 = conv2DBatchNormRelu(in_size, out_size, 3, 1, 1)
-        self.conv2 = conv2DBatchNormRelu(out_size, out_size, 3, 1, 1)
-        self.conv3 = conv2DBatchNormRelu(out_size, out_size, 3, 1, 1)
+        super(SegnetDown3, self).__init__()
+        self.conv1 = Conv2DBatchNormRelu(in_size, out_size, 3, 1, 1)
+        self.conv2 = Conv2DBatchNormRelu(out_size, out_size, 3, 1, 1)
+        self.conv3 = Conv2DBatchNormRelu(out_size, out_size, 3, 1, 1)
         self.maxpool_with_argmax = nn.MaxPool2d(2, 2, return_indices=True)
 
     def forward(self, inputs):
@@ -69,12 +69,12 @@ class segnetDown3(nn.Module):
         return outputs, indices, unpooled_shape
 
 
-class segnetUp2(nn.Module):
+class SegnetUp2(nn.Module):
     def __init__(self, in_size, out_size):
-        super(segnetUp2, self).__init__()
+        super(SegnetUp2, self).__init__()
         self.unpool = nn.MaxUnpool2d(2, 2)
-        self.conv1 = conv2DBatchNormRelu(in_size, in_size, 3, 1, 1)
-        self.conv2 = conv2DBatchNormRelu(in_size, out_size, 3, 1, 1)
+        self.conv1 = Conv2DBatchNormRelu(in_size, in_size, 3, 1, 1)
+        self.conv2 = Conv2DBatchNormRelu(in_size, out_size, 3, 1, 1)
 
     def forward(self, inputs, indices, output_shape):
         outputs = self.unpool(input=inputs, indices=indices, output_size=output_shape)
@@ -83,13 +83,13 @@ class segnetUp2(nn.Module):
         return outputs
 
 
-class segnetUp3(nn.Module):
+class SegnetUp3(nn.Module):
     def __init__(self, in_size, out_size):
-        super(segnetUp3, self).__init__()
+        super(SegnetUp3, self).__init__()
         self.unpool = nn.MaxUnpool2d(2, 2)
-        self.conv1 = conv2DBatchNormRelu(in_size, in_size, 3, 1, 1)
-        self.conv2 = conv2DBatchNormRelu(in_size, in_size, 3, 1, 1)
-        self.conv3 = conv2DBatchNormRelu(in_size, out_size, 3, 1, 1)
+        self.conv1 = Conv2DBatchNormRelu(in_size, in_size, 3, 1, 1)
+        self.conv2 = Conv2DBatchNormRelu(in_size, in_size, 3, 1, 1)
+        self.conv3 = Conv2DBatchNormRelu(in_size, out_size, 3, 1, 1)
 
     def forward(self, inputs, indices, output_shape):
         outputs = self.unpool(input=inputs, indices=indices, output_size=output_shape)
@@ -107,23 +107,22 @@ class SegNet(nn.Module):
         self.is_unpooling = is_unpooling
         self.encoded = None
 
-        self.down1 = segnetDown2(self.in_channels, 16)
-        self.down2 = segnetDown2(16, 32)
-        self.down3 = segnetDown3(32, 16)
-        self.down4 = segnetDown3(16, 8)
-        self.down5 = segnetDown3(8, 2)  # 16, 32, 16, 8, 2
+        self.down1 = SegnetDown2(self.in_channels, 16)
+        self.down2 = SegnetDown2(16, 32)
+        self.down3 = SegnetDown3(32, 16)
+        self.down4 = SegnetDown3(16, 8)
+        self.down5 = SegnetDown3(8, 2)  # 16, 32, 16, 8, 2
 
         self.encoder_end = nn.Linear(98, encoding_size)
         self.decoded_start = nn.Linear(encoding_size, 98)
 
-        self.up5 = segnetUp3(2, 8)
-        self.up4 = segnetUp3(8, 16)
-        self.up3 = segnetUp3(16, 32)
-        self.up2 = segnetUp2(32, 16)
-        self.up1 = segnetUp2(16, n_classes)
+        self.up5 = SegnetUp3(2, 8)
+        self.up4 = SegnetUp3(8, 16)
+        self.up3 = SegnetUp3(16, 32)
+        self.up2 = SegnetUp2(32, 16)
+        self.up1 = SegnetUp2(16, n_classes)
 
     def forward(self, inputs):
-
         down1, indices_1, unpool_shape1 = self.down1(inputs)
         down2, indices_2, unpool_shape2 = self.down2(down1)
         down3, indices_3, unpool_shape3 = self.down3(down2)
@@ -139,41 +138,6 @@ class SegNet(nn.Module):
         up1 = self.up1(up2, indices_1, unpool_shape1)
 
         return up1
-
-    def init_vgg16_params(self, vgg16):
-        blocks = [self.down1, self.down2, self.down3, self.down4, self.down5]
-
-        ranges = [[0, 4], [5, 9], [10, 16], [17, 23], [24, 29]]
-        features = list(vgg16.features.children())
-
-        vgg_layers = []
-        for _layer in features:
-            if isinstance(_layer, nn.Conv2d):
-                vgg_layers.append(_layer)
-
-        merged_layers = []
-        for idx, conv_block in enumerate(blocks):
-            if idx < 2:
-                units = [conv_block.conv1.cbr_unit, conv_block.conv2.cbr_unit]
-            else:
-                units = [
-                    conv_block.conv1.cbr_unit,
-                    conv_block.conv2.cbr_unit,
-                    conv_block.conv3.cbr_unit,
-                ]
-            for _unit in units:
-                for _layer in _unit:
-                    if isinstance(_layer, nn.Conv2d):
-                        merged_layers.append(_layer)
-
-        assert len(vgg_layers) == len(merged_layers)
-
-        for l1, l2 in zip(vgg_layers, merged_layers):
-            if isinstance(l1, nn.Conv2d) and isinstance(l2, nn.Conv2d):
-                assert l1.weight.size() == l2.weight.size()
-                assert l1.bias.size() == l2.bias.size()
-                l2.weight.data = l1.weight.data
-                l2.bias.data = l1.bias.data
 
 
 if __name__ == '__main__':
